@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Zomato Interview Tracker</title>
+<style>
+  :root{
+    --bg:#0b0d10;
+    --panel:#14171c;
+    --line:#232830;
+    --text:#e7ebef;
+    --dim:#8b93a1;
+    --accent:#4f8cff;
+    --easy:#33c17a;
+    --medium:#e8a93c;
+    --hard:#e8543c;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+    padding:28px 18px 60px;
+  }
+  .wrap{max-width:920px;margin:0 auto;}
+  h1{
+    font-size:28px;
+    letter-spacing:-0.02em;
+    margin:0 0 4px;
+    font-weight:700;
+  }
+  .sub{color:var(--dim);font-size:14px;margin-bottom:22px;}
+
+  .stats{
+    display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;
+  }
+  .stat{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:12px 16px;
+    flex:1;
+    min-width:120px;
+  }
+  .stat .n{font-size:22px;font-weight:700;}
+  .stat .l{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;}
+
+  .progress-bar{
+    height:8px;background:var(--panel);border:1px solid var(--line);
+    border-radius:99px;overflow:hidden;margin-bottom:20px;
+  }
+  .progress-fill{
+    height:100%;background:linear-gradient(90deg,var(--accent),#7db2ff);
+    width:0%;transition:width .3s ease;
+  }
+
+  .controls{
+    display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center;
+  }
+  input[type=text]{
+    flex:1;min-width:180px;
+    background:var(--panel);border:1px solid var(--line);color:var(--text);
+    padding:9px 12px;border-radius:8px;font-size:14px;outline:none;
+  }
+  input[type=text]:focus{border-color:var(--accent);}
+  select, .chip{
+    background:var(--panel);border:1px solid var(--line);color:var(--text);
+    padding:9px 12px;border-radius:8px;font-size:13px;cursor:pointer;
+  }
+  .chip.active{border-color:var(--accent);color:var(--accent);}
+  .chip{user-select:none;}
+
+  table{width:100%;border-collapse:collapse;background:var(--panel);border-radius:10px;overflow:hidden;border:1px solid var(--line);}
+  thead th{
+    text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;
+    color:var(--dim);padding:10px 12px;border-bottom:1px solid var(--line);
+    cursor:pointer;user-select:none;
+  }
+  thead th:hover{color:var(--text);}
+  tbody tr{border-bottom:1px solid var(--line);}
+  tbody tr:last-child{border-bottom:none;}
+  tbody tr.done{opacity:.45;}
+  tbody tr.done .title{text-decoration:line-through;}
+  tbody tr:hover{background:#191d24;}
+  td{padding:9px 12px;font-size:14px;vertical-align:middle;}
+  td.check{width:36px;}
+  td.diff{width:80px;}
+  td.freq{width:70px;color:var(--dim);font-variant-numeric:tabular-nums;}
+  a.title{color:var(--text);text-decoration:none;}
+  a.title:hover{color:var(--accent);text-decoration:underline;}
+
+  input[type=checkbox]{
+    appearance:none;width:18px;height:18px;border:1.5px solid var(--dim);
+    border-radius:5px;cursor:pointer;position:relative;background:transparent;
+  }
+  input[type=checkbox]:checked{background:var(--accent);border-color:var(--accent);}
+  input[type=checkbox]:checked::after{
+    content:"";position:absolute;left:5px;top:1px;width:5px;height:9px;
+    border:solid white;border-width:0 2px 2px 0;transform:rotate(45deg);
+  }
+
+  .badge{
+    font-size:11px;font-weight:700;padding:2px 8px;border-radius:5px;
+    display:inline-block;letter-spacing:.02em;
+  }
+  .badge.EASY{color:var(--easy);background:rgba(51,193,122,.12);}
+  .badge.MEDIUM{color:var(--medium);background:rgba(232,169,60,.12);}
+  .badge.HARD{color:var(--hard);background:rgba(232,84,60,.12);}
+
+  .empty{text-align:center;color:var(--dim);padding:30px;}
+  .reset{margin-left:auto;color:var(--dim);background:none;border:1px solid var(--line);
+    padding:9px 12px;border-radius:8px;font-size:13px;cursor:pointer;}
+  .reset:hover{color:var(--hard);border-color:var(--hard);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Zomato Interview Question Tracker</h1>
+  <div class="sub">30 problems, ranked by reported frequency. Check them off as you solve them.</div>
+
+  <div class="stats">
+    <div class="stat"><div class="n" id="statTotal">0</div><div class="l">Total</div></div>
+    <div class="stat"><div class="n" id="statDone">0</div><div class="l">Solved</div></div>
+    <div class="stat"><div class="n" id="statRemain">0</div><div class="l">Remaining</div></div>
+    <div class="stat"><div class="n" id="statPct">0%</div><div class="l">Progress</div></div>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+  <div class="controls">
+    <input type="text" id="search" placeholder="Search by title...">
+    <div class="chip active" data-diff="ALL">All</div>
+    <div class="chip" data-diff="EASY">Easy</div>
+    <div class="chip" data-diff="MEDIUM">Medium</div>
+    <div class="chip" data-diff="HARD">Hard</div>
+    <select id="hideDone">
+      <option value="show">Show solved</option>
+      <option value="hide">Hide solved</option>
+    </select>
+    <button class="reset" id="resetBtn">Reset progress</button>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th class="check"></th>
+        <th data-sort="difficulty">Difficulty</th>
+        <th data-sort="title">Title</th>
+        <th data-sort="freq">Freq %</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+  <div class="empty" id="emptyMsg" style="display:none;">No questions match your filters.</div>
+</div>
+
+<script>
+const QUESTIONS = [{"difficulty": "HARD", "title": "Maximum Spending After Buying Items", "freq": 100.0, "link": "https://leetcode.com/problems/maximum-spending-after-buying-items"}, {"difficulty": "HARD", "title": "Split the Array to Make Coprime Products", "freq": 100.0, "link": "https://leetcode.com/problems/split-the-array-to-make-coprime-products"}, {"difficulty": "MEDIUM", "title": "Bitwise OR of All Subsequence Sums", "freq": 100.0, "link": "https://leetcode.com/problems/bitwise-or-of-all-subsequence-sums"}, {"difficulty": "HARD", "title": "Shortest Cycle in a Graph", "freq": 100.0, "link": "https://leetcode.com/problems/shortest-cycle-in-a-graph"}, {"difficulty": "HARD", "title": "Number of Ways to Divide a Long Corridor", "freq": 100.0, "link": "https://leetcode.com/problems/number-of-ways-to-divide-a-long-corridor"}, {"difficulty": "MEDIUM", "title": "Count the Hidden Sequences", "freq": 96.4, "link": "https://leetcode.com/problems/count-the-hidden-sequences"}, {"difficulty": "HARD", "title": "The Skyline Problem", "freq": 81.1, "link": "https://leetcode.com/problems/the-skyline-problem"}, {"difficulty": "MEDIUM", "title": "Exchange Seats", "freq": 81.1, "link": "https://leetcode.com/problems/exchange-seats"}, {"difficulty": "HARD", "title": "First Missing Positive", "freq": 73.3, "link": "https://leetcode.com/problems/first-missing-positive"}, {"difficulty": "MEDIUM", "title": "Number of Islands", "freq": 73.3, "link": "https://leetcode.com/problems/number-of-islands"}, {"difficulty": "MEDIUM", "title": "Maximum Subarray", "freq": 73.3, "link": "https://leetcode.com/problems/maximum-subarray"}, {"difficulty": "MEDIUM", "title": "Longest Substring Without Repeating Characters", "freq": 73.3, "link": "https://leetcode.com/problems/longest-substring-without-repeating-characters"}, {"difficulty": "MEDIUM", "title": "Single Element in a Sorted Array", "freq": 73.3, "link": "https://leetcode.com/problems/single-element-in-a-sorted-array"}, {"difficulty": "HARD", "title": "LFU Cache", "freq": 62.4, "link": "https://leetcode.com/problems/lfu-cache"}, {"difficulty": "MEDIUM", "title": "Snakes and Ladders", "freq": 62.4, "link": "https://leetcode.com/problems/snakes-and-ladders"}, {"difficulty": "MEDIUM", "title": "Single Number III", "freq": 62.4, "link": "https://leetcode.com/problems/single-number-iii"}, {"difficulty": "MEDIUM", "title": "Maximal Square", "freq": 62.4, "link": "https://leetcode.com/problems/maximal-square"}, {"difficulty": "EASY", "title": "Isomorphic Strings", "freq": 62.4, "link": "https://leetcode.com/problems/isomorphic-strings"}, {"difficulty": "MEDIUM", "title": "Course Schedule", "freq": 62.4, "link": "https://leetcode.com/problems/course-schedule"}, {"difficulty": "HARD", "title": "Rearrange String k Distance Apart", "freq": 62.4, "link": "https://leetcode.com/problems/rearrange-string-k-distance-apart"}, {"difficulty": "MEDIUM", "title": "Permutations", "freq": 62.4, "link": "https://leetcode.com/problems/permutations"}, {"difficulty": "EASY", "title": "Move Zeroes", "freq": 62.4, "link": "https://leetcode.com/problems/move-zeroes"}, {"difficulty": "MEDIUM", "title": "Combination Sum", "freq": 62.4, "link": "https://leetcode.com/problems/combination-sum"}, {"difficulty": "MEDIUM", "title": "Search a 2D Matrix II", "freq": 62.4, "link": "https://leetcode.com/problems/search-a-2d-matrix-ii"}, {"difficulty": "MEDIUM", "title": "Merge Intervals", "freq": 62.4, "link": "https://leetcode.com/problems/merge-intervals"}, {"difficulty": "MEDIUM", "title": "Container With Most Water", "freq": 62.4, "link": "https://leetcode.com/problems/container-with-most-water"}, {"difficulty": "HARD", "title": "Russian Doll Envelopes", "freq": 62.4, "link": "https://leetcode.com/problems/russian-doll-envelopes"}, {"difficulty": "MEDIUM", "title": "Using a Robot to Print the Lexicographically Smallest String", "freq": 62.4, "link": "https://leetcode.com/problems/using-a-robot-to-print-the-lexicographically-smallest-string"}, {"difficulty": "MEDIUM", "title": "Find the Safest Path in a Grid", "freq": 62.4, "link": "https://leetcode.com/problems/find-the-safest-path-in-a-grid"}, {"difficulty": "MEDIUM", "title": "Maximum Xor Product", "freq": 62.4, "link": "https://leetcode.com/problems/maximum-xor-product"}];
+
+const STORAGE_KEY = 'zomato_tracker_solved';
+let solved = {};
+let sortKey = null;
+let sortDir = 1;
+let diffFilter = 'ALL';
+let hideDone = false;
+let searchTerm = '';
+
+function loadSolved(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw) solved = JSON.parse(raw);
+  }catch(e){ solved = {}; }
+  render();
+}
+function saveSolved(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(solved)); }
+  catch(e){ console.error('save failed', e); }
+}
+
+function idFor(q){ return q.title; }
+
+function applyFiltersSort(){
+  let list = QUESTIONS.slice();
+  if(diffFilter !== 'ALL') list = list.filter(q => q.difficulty === diffFilter);
+  if(searchTerm) list = list.filter(q => q.title.toLowerCase().includes(searchTerm));
+  if(hideDone) list = list.filter(q => !solved[idFor(q)]);
+  if(sortKey){
+    list.sort((a,b) => {
+      let av = a[sortKey], bv = b[sortKey];
+      if(typeof av === 'string'){ av = av.toLowerCase(); bv = bv.toLowerCase(); }
+      if(av < bv) return -1*sortDir;
+      if(av > bv) return 1*sortDir;
+      return 0;
+    });
+  }
+  return list;
+}
+
+function render(){
+  const list = applyFiltersSort();
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = '';
+  document.getElementById('emptyMsg').style.display = list.length ? 'none' : 'block';
+
+  for(const q of list){
+    const id = idFor(q);
+    const isDone = !!solved[id];
+    const tr = document.createElement('tr');
+    if(isDone) tr.classList.add('done');
+    tr.innerHTML = `
+      <td class="check"><input type="checkbox" ${isDone?'checked':''} data-id="${encodeURIComponent(id)}"></td>
+      <td class="diff"><span class="badge ${q.difficulty}">${q.difficulty[0]+q.difficulty.slice(1).toLowerCase()}</span></td>
+      <td><a class="title" href="${q.link}" target="_blank" rel="noopener">${q.title}</a></td>
+      <td class="freq">${q.freq}%</td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  tbody.querySelectorAll('input[type=checkbox]').forEach(cb => {
+    cb.addEventListener('change', (e) => {
+      const id = decodeURIComponent(e.target.getAttribute('data-id'));
+      if(e.target.checked) solved[id] = true; else delete solved[id];
+      saveSolved();
+      updateStats();
+      e.target.closest('tr').classList.toggle('done', e.target.checked);
+      if(hideDone) render();
+    });
+  });
+
+  updateStats();
+}
+
+function updateStats(){
+  const total = QUESTIONS.length;
+  const done = Object.keys(solved).filter(id => QUESTIONS.some(q => idFor(q)===id)).length;
+  const pct = total ? Math.round(done/total*100) : 0;
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statDone').textContent = done;
+  document.getElementById('statRemain').textContent = total - done;
+  document.getElementById('statPct').textContent = pct + '%';
+  document.getElementById('progressFill').style.width = pct + '%';
+}
+
+document.getElementById('search').addEventListener('input', (e) => {
+  searchTerm = e.target.value.toLowerCase();
+  render();
+});
+
+document.querySelectorAll('.chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    diffFilter = chip.getAttribute('data-diff');
+    render();
+  });
+});
+
+document.getElementById('hideDone').addEventListener('change', (e) => {
+  hideDone = e.target.value === 'hide';
+  render();
+});
+
+document.querySelectorAll('th[data-sort]').forEach(th => {
+  th.addEventListener('click', () => {
+    const key = th.getAttribute('data-sort');
+    if(sortKey === key) sortDir *= -1; else { sortKey = key; sortDir = 1; }
+    render();
+  });
+});
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  if(confirm('Clear all solved progress?')){
+    solved = {};
+    saveSolved();
+    render();
+  }
+});
+
+loadSolved();
+</script>
+</body>
+</html>
